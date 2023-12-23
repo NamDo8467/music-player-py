@@ -51,13 +51,15 @@ class Player:
             path.join('songs', songs[index_of_song])).info.length
 
     def play(self, start=0):
-        self.is_paused = False
-        global index_of_song
-        mixer.init()
-        mixer.music.load(path.join('songs', songs[index_of_song]))
-        self.slider.config(to=self.getLength(index_of_song))
-        self.moveSlider()
-        mixer.music.play(start=start)
+        if(self.is_paused != False):
+            self.is_paused = False
+            global index_of_song
+            mixer.init()
+            mixer.music.load(path.join('songs', songs[index_of_song]))
+            self.slider.config(to=self.getLength(index_of_song))
+            self.slider.config(length=self.getLength(index_of_song))
+            self.moveSlider()
+            mixer.music.play(start=start)
         
         
     def pause(self):
