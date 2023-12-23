@@ -1,5 +1,4 @@
 from tkinter import *
-import pygame
 from pygame import mixer
 from PIL import ImageTk, Image
 from os import listdir, path
@@ -28,7 +27,7 @@ class Player:
         self.slider.grid(row=1, column=3, columnspan=4, rowspan=2, padx=130, pady=(10,10))
         # self.slider.bind('<Button-1>', self.pause)
         # self.slider.bind('<ButtonRelease-1>', self.slide)
-
+        
 
         self.play_btn = Button(self.root, text="Play",
                                   command=self.play, width=7)
@@ -146,7 +145,5 @@ class Player:
 
 
 player = Player()
-
-
 
 player.loop()
