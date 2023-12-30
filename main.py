@@ -44,6 +44,9 @@ class Player:
 
         self.error_banner = Label(self.root, text="No more songs to play")
 
+        self.song_length = 0
+        self.index_of_song = 0
+
         mixer.init(frequency=48000)
                 
         
@@ -51,86 +54,71 @@ class Player:
     def play(self, start=0):
         if(self.is_paused != False):
             self.is_paused = False
-            global index_of_song
-            mixer.music.load(path.join('songs', songs[0]))
-            # mixer.music.load("D:/Python/Music Player/music-player-py/songs/chi-muon-ben-em-luc-nay.mp3")
-            self.slider.config(to=self.getLength(index_of_song), value=0)
-            self.slider.config(length=self.getLength(index_of_song))
+            mixer.music.load(path.join('songs', songs[self.index_of_song]))
+            self.song_length = self.getLength(self.index_of_song)
+            self.slider.config(to=self.song_length, value=0, length=self.song_length)
             # mixer.music.rewind()
             mixer.music.play(start=start)
             
             self.moveSlider()
+            print("I played")
             
         
         
     def pause(self):
-        # mixer.init()
         mixer.music.pause()
         self.is_paused = True
         
 
     def next(self):
-        global index_of_song
-        index_of_song += 1
+        self.index_of_song += 1
         
-        if index_of_song >= len(songs):
+        if self.index_of_song >= len(songs):
             self.error_banner.grid(row=4, column=3, columnspan=4)
             return
-        elif index_of_song <= 0:
-            index_of_song = 1
-            self.slider.config(value=0)
-            self.song_length = self.getLength(index_of_song)
-            self.slider.config(to=self.song_length)
-            # mixer.init()
+        elif self.index_of_song <= 0:
+            self.index_of_song = 1
+            self.song_length = self.getLength(self.index_of_song)
+            self.slider.config(to=self.song_length, length=self.song_length, value=0)
             mixer.music.load(path.join('songs', songs[index_of_song]))
-            mixer.music.play()
             self.error_banner.grid_forget()
             return
 
         # Change slider to 0 and slider label
         else:
-            self.slider.config(value=0)
-            self.song_length = self.getLength(index_of_song)
-            self.slider.config(to=f'{self.song_length}')
-            # mixer.init()
-            mixer.music.load(path.join('songs', songs[index_of_song]))
-            mixer.music.play()
+            self.song_length = self.getLength(self.index_of_song)
+            self.slider.config(to=self.song_length, length=self.song_length, value=0)
+            mixer.music.load(path.join('songs', songs[self.index_of_song]))
+            # mixer.music.play()
+            
 
     def prev(self):
-        global index_of_song
-        index_of_song -= 1
-        if index_of_song >= len(songs):
-            index_of_song = len(songs)-2
-            # mixer.init()
-            mixer.music.load(path.join('songs', songs[index_of_song]))
-            self.slider.config(value=0)
-            self.song_length = self.getLength(index_of_song)
-            self.slider.config(to=f'{self.song_length}')
+        self.index_of_song -= 1
+        if self.index_of_song >= len(songs):
+            self.index_of_song = len(songs)-2
+            mixer.music.load(path.join('songs', songs[self.index_of_song]))
+            self.song_length = self.getLength(self.index_of_song)
+            self.slider.config(to=self.song_length, length=self.song_length, value=0)
             mixer.music.play()
             self.error_banner.grid_forget()
             return
 
-        if index_of_song < 0:
+        if self.index_of_song < 0:
             self.error_banner.grid(row=4, column=3, columnspan=4)
             return
 
         # Change slider value to 0 and slider label
-        self.slider.config(value=0)
-        self.song_length = self.getLength(index_of_song)
-        self.slider.config(to=f'{self.song_length}')
-        # mixer.init()
-        mixer.music.load(path.join('songs', songs[index_of_song]))
-        mixer.music.play()
+        self.song_length = self.getLength(self.index_of_song)
+        self.slider.config(to=self.song_length, length=self.song_length, value=0)
+        mixer.music.load(path.join('songs', songs[self.index_of_song]))
        
     def slide(self, none):
-        # mixer.music.set_pos(int(self.slider.get()))
-        print(self.slider.get())
         mixer.music.play(start=int(self.slider.get()))
         
 
     def getLength(self, index_of_song = 0):
-        self.song_length = MP3(path.join('songs', songs[index_of_song])).info.length
-        return round(self.song_length)
+        song_length = MP3(path.join('songs', songs[index_of_song])).info.length
+        return round(song_length)
 
     def moveSlider(self):
         if self.is_paused == True:
