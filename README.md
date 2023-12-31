@@ -1,6 +1,6 @@
 # Music Player
 This project is a GUI music player in Python using Tkinter and Pygame. It works with audio files only. The music player lets you play your songs from the song list and install any music video from YouTube, convert it into an MP3 file, and store it in your song list
-# Project Requirements and Library
+# Project Requirements and Libraries
 - Python [(version 3.9 and above)](https://www.python.org/downloads/)
 - Tkinter (included when you install Python)
 - Pygame [(version 2.5.2)](https://www.pygame.org/news/2023/9/pygame-2-5-2-yet-another-bug-fix-release) -> `python -m pip install -U pygame==2.5.2 --user`
@@ -19,4 +19,4 @@ Run the following commands to clone the project
 git clone https://github.com/NamDo8467/music-player-py.git
 ```
 ### Install necessary packages
-Refer to [this](#project-requirement-and-library)
+Refer to [this](#project-requirements-and-libraries)
