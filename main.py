@@ -1,9 +1,11 @@
 from tkinter import *
 from pygame import mixer
 from PIL import ImageTk, Image
-from os import listdir, path
+from os import listdir, path, remove
 from tkinter import ttk
-from mutagen.mp3 import MP3
+from mutagen.mp3 import MP3 # module to get MP3 file information like video duration
+from pytube import YouTube # module to download video from Youtube
+from moviepy.editor import * # module to convert mp4 to mp3
 
 songs = listdir('./songs')
 index_of_song = 0
@@ -12,8 +14,9 @@ song_length = MP3(path.join('songs', songs[index_of_song])).info.length
 
 class Player:
     def __init__(self, root=Tk()):
+        mixer.init(frequency=48000)
         self.root = root
-        self.root.geometry("500x400")
+        self.root.geometry("500x500")
         self.root.title('Music Player')
         self.is_paused = True
 
@@ -42,14 +45,17 @@ class Player:
                                   command=self.prev, width=7)
         self.prev_btn.grid(row=3, column=0, columnspan=4, padx=(110, 20))
 
-        self.error_banner = Label(self.root, text="No more songs to play")
+        self.error_banner = Label(self.root)
+        self.error_banner.grid(row=4, column=3, columnspan=4)
+
+        self.download_box = ttk.Entry(self.root, width=30)
+        self.download_box.grid(row=5, column=3, columnspan=4)
+
+        self.download_btn = ttk.Button(self.root, text="Download", command=self.download_from_youtube, width=15)
+        self.download_btn.grid(row=6, column=3, columnspan=4)
 
         self.song_length = 0
-        self.index_of_song = 0
 
-        mixer.init(frequency=48000)
-                
-        
 
     def play(self, start=0):
         if(self.is_paused != False):
@@ -59,22 +65,17 @@ class Player:
             self.slider.config(to=self.song_length, value=0, length=self.song_length)
             # mixer.music.rewind()
             mixer.music.play(start=start)
-            
             self.moveSlider()
-            print("I played")
-            
-        
-        
+
     def pause(self):
         mixer.music.pause()
         self.is_paused = True
         
-
     def next(self):
         self.index_of_song += 1
         
         if self.index_of_song >= len(songs):
-            self.error_banner.grid(row=4, column=3, columnspan=4)
+            self.error_banner.config(text="No more song to play")
             return
         elif self.index_of_song <= 0:
             self.index_of_song = 1
@@ -89,7 +90,7 @@ class Player:
             self.song_length = self.getLength(self.index_of_song)
             self.slider.config(to=self.song_length, length=self.song_length, value=0)
             mixer.music.load(path.join('songs', songs[self.index_of_song]))
-            # mixer.music.play()
+            mixer.music.play()
             
 
     def prev(self):
@@ -104,7 +105,7 @@ class Player:
             return
 
         if self.index_of_song < 0:
-            self.error_banner.grid(row=4, column=3, columnspan=4)
+            self.error_banner.config(text="No more song to play")
             return
 
         # Change slider value to 0 and slider label
@@ -132,6 +133,21 @@ class Player:
                 print(self.slider.get())
                 mixer.music.stop()
 
+    def download_from_youtube(self):
+        url = self.download_box.get()
+        if(url.strip() != ""):
+            youtube = YouTube(f'{url}')
+            song = youtube.streams.filter(mime_type="video/mp4").first()
+            out_file = song.download(output_path="./songs")
+
+            # Covert mp4 to mp3 and then delete the mp4
+            video = VideoFileClip(f"./songs/{song.title}.mp4")
+            video.audio.write_audiofile(f"./songs/{song.title}.mp3")
+            video.close()
+            remove(f"./songs/{song.title}.mp4")
+            
+        else:
+            self.error_banner.config(text="URL can not be empty")
 
     def loop(self):
         self.root.mainloop()
