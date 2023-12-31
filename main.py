@@ -1,15 +1,17 @@
 from tkinter import *
+from time import sleep
 from pygame import mixer
 from PIL import ImageTk, Image
 from os import listdir, path, remove
 from tkinter import ttk
 from mutagen.mp3 import MP3 # module to get MP3 file information like video duration
 from pytube import YouTube # module to download video from Youtube
-from moviepy.editor import * # module to convert mp4 to mp3
+from moviepy.editor import VideoFileClip # module to convert mp4 to mp3
+import asyncio
 
-songs = listdir('./songs')
-index_of_song = 0
-song_length = MP3(path.join('songs', songs[index_of_song])).info.length
+# songs = listdir('./songs')
+# index_of_song = 0
+# song_length = MP3(path.join('songs', songs[index_of_song])).info.length
 
 
 class Player:
@@ -19,6 +21,8 @@ class Player:
         self.root.geometry("500x500")
         self.root.title('Music Player')
         self.is_paused = True
+        self.songs = listdir('./songs')
+        self.index_of_song = 0
 
         self.song_picture = ImageTk.PhotoImage(Image.open("music-note.png"))
         self.song_picture_label = Label(
@@ -48,7 +52,8 @@ class Player:
         self.error_banner = Label(self.root)
         self.error_banner.grid(row=4, column=3, columnspan=4)
 
-        self.download_box = ttk.Entry(self.root, width=30)
+        self.download_text_var = StringVar()
+        self.download_box = Entry(self.root, width=30, textvariable=self.download_text_var)
         self.download_box.grid(row=5, column=3, columnspan=4)
 
         self.download_btn = ttk.Button(self.root, text="Download", command=self.download_from_youtube, width=15)
@@ -60,7 +65,7 @@ class Player:
     def play(self, start=0):
         if(self.is_paused != False):
             self.is_paused = False
-            mixer.music.load(path.join('songs', songs[self.index_of_song]))
+            mixer.music.load(path.join('songs', self.songs[self.index_of_song]))
             self.song_length = self.getLength(self.index_of_song)
             self.slider.config(to=self.song_length, value=0, length=self.song_length)
             # mixer.music.rewind()
@@ -74,14 +79,14 @@ class Player:
     def next(self):
         self.index_of_song += 1
         
-        if self.index_of_song >= len(songs):
+        if self.index_of_song >= len(self.songs):
             self.error_banner.config(text="No more song to play")
             return
         elif self.index_of_song <= 0:
             self.index_of_song = 1
             self.song_length = self.getLength(self.index_of_song)
             self.slider.config(to=self.song_length, length=self.song_length, value=0)
-            mixer.music.load(path.join('songs', songs[index_of_song]))
+            mixer.music.load(path.join('songs', self.songs[self.index_of_song]))
             self.error_banner.grid_forget()
             return
 
@@ -89,15 +94,15 @@ class Player:
         else:
             self.song_length = self.getLength(self.index_of_song)
             self.slider.config(to=self.song_length, length=self.song_length, value=0)
-            mixer.music.load(path.join('songs', songs[self.index_of_song]))
+            mixer.music.load(path.join('songs', self.songs[self.index_of_song]))
             mixer.music.play()
             
 
     def prev(self):
         self.index_of_song -= 1
-        if self.index_of_song >= len(songs):
-            self.index_of_song = len(songs)-2
-            mixer.music.load(path.join('songs', songs[self.index_of_song]))
+        if self.index_of_song >= len(self.songs):
+            self.index_of_song = len(self.songs)-2
+            mixer.music.load(path.join('songs', self.songs[self.index_of_song]))
             self.song_length = self.getLength(self.index_of_song)
             self.slider.config(to=self.song_length, length=self.song_length, value=0)
             mixer.music.play()
@@ -111,14 +116,14 @@ class Player:
         # Change slider value to 0 and slider label
         self.song_length = self.getLength(self.index_of_song)
         self.slider.config(to=self.song_length, length=self.song_length, value=0)
-        mixer.music.load(path.join('songs', songs[self.index_of_song]))
+        mixer.music.load(path.join('songs', self.songs[self.index_of_song]))
        
     def slide(self, none):
         mixer.music.play(start=int(self.slider.get()))
         
 
     def getLength(self, index_of_song = 0):
-        song_length = MP3(path.join('songs', songs[index_of_song])).info.length
+        song_length = MP3(path.join('songs', self.songs[index_of_song])).info.length
         return round(song_length)
 
     def moveSlider(self):
@@ -134,20 +139,31 @@ class Player:
                 mixer.music.stop()
 
     def download_from_youtube(self):
-        url = self.download_box.get()
-        if(url.strip() != ""):
-            youtube = YouTube(f'{url}')
-            song = youtube.streams.filter(mime_type="video/mp4").first()
-            out_file = song.download(output_path="./songs")
+        try:
+            url = self.download_text_var.get()
+            if(url.strip() != ""):
+                youtube = YouTube(f'{url}')
+                song = youtube.streams.filter(mime_type="video/mp4").first()
+                out_file = song.download(output_path="./songs")
 
-            # Covert mp4 to mp3 and then delete the mp4
-            video = VideoFileClip(f"./songs/{song.title}.mp4")
-            video.audio.write_audiofile(f"./songs/{song.title}.mp3")
-            video.close()
-            remove(f"./songs/{song.title}.mp4")
-            
-        else:
-            self.error_banner.config(text="URL can not be empty")
+                # Covert mp4 to mp3 and then delete the mp4
+                video = VideoFileClip(f"./songs/{song.title}.mp4")
+                video.audio.write_audiofile(f"./songs/{song.title}.mp3")
+                video.close()
+                remove(f"./songs/{song.title}.mp4")
+
+                # Update song list
+                self.songs = listdir("./songs")
+
+                # Reset download box
+                self.download_text_var.set("")
+            else:
+                self.error_banner.config(text="URL can not be empty")
+        except:
+            # Make error message disappear after a certain amount of time
+            self.error_banner.config(text="URL not found", fg="red")
+            self.root.after(1200, lambda: self.error_banner.config(text=""))
+            self.root.after(1200, lambda: self.download_text_var.set(""))
 
     def loop(self):
         self.root.mainloop()
