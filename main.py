@@ -8,11 +8,6 @@ from pytube import YouTube # module to download video from Youtube
 from moviepy.editor import VideoFileClip # module to convert mp4 to mp3
 
 
-# songs = listdir('./songs')
-# index_of_song = 0
-# song_length = MP3(path.join('songs', songs[index_of_song])).info.length
-
-
 class Player:
     def __init__(self, root=Tk()):
         mixer.init(frequency=48000)
