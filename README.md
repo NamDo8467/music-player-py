@@ -18,5 +18,9 @@ Run the following commands to clone the project
 ```
 git clone https://github.com/NamDo8467/music-player-py.git
 ```
+Go to [(version 3.9 and above)](https://www.python.org/downloads/) to download Python to your local machine
+
 ### Install necessary packages
-Refer to [this](#project-requirements-and-libraries)
+```
+pip install -r requirements.txt
+```
