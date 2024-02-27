@@ -1,4 +1,6 @@
 from tkinter import *
+import tkinter.messagebox
+from time import sleep
 from pygame import mixer
 from PIL import ImageTk, Image
 from os import listdir, path, remove
@@ -54,6 +56,18 @@ class Player:
         self.download_btn.grid(row=6, column=3, columnspan=4)
 
         self.song_length = 0
+
+        self.progress_window = Toplevel()
+        self.progress_window.title("Download Status")
+        self.progress_window.geometry("300x200")
+        self.progress_window.withdraw()
+        # self.progress_window.wm_resizable(False, False)
+
+
+        # self.progress_window, variable=self.progress_var, maximum=100
+        self.progress_var = DoubleVar()
+        self.progress_bar = ttk.Progressbar(self.progress_window, variable=self.progress_var, maximum=100)
+        self.progress_bar.pack(padx=20, pady=50, fill="x")
 
 
     def play(self, start=0):
@@ -132,32 +146,59 @@ class Player:
                 print(self.slider.get())
                 mixer.music.stop()
 
+    def update_progress(self):
+        new_value = self.progress_var.get()
+        new_value += 10
+        if new_value > 100:
+            new_value = 0 
+            self.progress_window.withdraw()
+            return
+        self.progress_var.set(new_value)
+        self.progress_bar.configure(value=new_value)
+        self.progress_window.after(1000, self.update_progress)        
+
     def download_from_youtube(self):
-        try:
-            url = self.download_text_var.get()
-            if(url.strip() != ""):
-                youtube = YouTube(f'{url}')
-                song = youtube.streams.filter(mime_type="video/mp4").first()
-                out_file = song.download(output_path="./songs")
+        self.progress_window.deiconify()
 
-                # Covert mp4 to mp3 and then delete the mp4
-                video = VideoFileClip(f"./songs/{song.title}.mp4")
-                video.audio.write_audiofile(f"./songs/{song.title}.mp3")
-                video.close()
-                remove(f"./songs/{song.title}.mp4")
+        self.update_progress()
+        # while(new_value < 100):
+        #     new_value = self.progress_var.get()
+        #     new_value += 10
+        #     if new_value > 100:
+        #         new_value = 0
+        #     self.progress_var.set(new_value)
+        #     self.progress_bar["value"] = new_value
+        #     sleep(1)
+        
+        # progress_window.after(1000, self.update_progress(progress_var, new_value, progress_bar))
+        
+        # try:
+        #     url = self.download_text_var.get()
+        #     if(url.strip() != ""):
+        #         youtube = YouTube(f'{url}')
+        #         song = youtube.streams.filter(mime_type="video/mp4").first()
+        #         out_file = song.download(output_path="./songs")
 
-                # Update song list
-                self.songs = listdir("./songs")
+        #         # Covert mp4 to mp3 and then delete the mp4
+        #         video = VideoFileClip(f"./songs/{song.title}.mp4")
+        #         video.audio.write_audiofile(f"./songs/{song.title}.mp3")
+        #         video.close()
+        #         remove(f"./songs/{song.title}.mp4")
 
-                # Reset download box
-                self.download_text_var.set("")
-            else:
-                self.error_banner.config(text="URL can not be empty")
-        except:
-            # Make error message disappear after a certain amount of time
-            self.error_banner.config(text="URL not found", fg="red")
-            self.root.after(1200, lambda: self.error_banner.config(text=""))
-            self.root.after(1200, lambda: self.download_text_var.set(""))
+        #         # Update song list
+        #         self.songs = listdir("./songs")
+
+        #         # Reset download box
+        #         self.download_text_var.set("")
+        #     else:
+        #         self.error_banner.config(text="URL can not be empty")
+        # except:
+        #     # Make error message disappear after a certain amount of time
+        #     self.error_banner.config(text="URL not found", fg="red")
+        #     self.root.after(1200, lambda: self.error_banner.config(text=""))
+        #     self.root.after(1200, lambda: self.download_text_var.set(""))
+    
+
 
     def loop(self):
         self.root.mainloop()
