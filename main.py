@@ -8,6 +8,8 @@ from tkinter import ttk
 from mutagen.mp3 import MP3 # module to get MP3 file information like video duration
 from pytube import YouTube # module to download video from Youtube
 from moviepy.editor import VideoFileClip # module to convert mp4 to mp3
+import threading
+import multiprocessing
 
 
 class Player:
@@ -53,7 +55,7 @@ class Player:
         self.download_box = Entry(self.root, width=30, textvariable=self.download_text_var)
         self.download_box.grid(row=5, column=3, columnspan=4)
 
-        self.download_btn = ttk.Button(self.root, text="Download", command=self.download_from_youtube, width=15)
+        self.download_btn = ttk.Button(self.root, text="Download", command=self.start_download_from_youtube_in_bg, width=15)
         self.download_btn.grid(row=6, column=3, columnspan=4)
 
         self.song_length = 0
@@ -170,10 +172,10 @@ class Player:
         if self.progress_var.get() >= 90:
             self.progress_var.set(99.9)
             self.progress_label.configure(text=f'Downloading: {self.progress_var.get()}')
-            self.progress_window.wm_withdraw() # close the progress window
-            # self.create_after_download_popup(1)
+            self.progress_bar.stop() 
+            # self.progress_window.wm_withdraw() # close the progress window
             return
-        self.update_progress_bar = self.progress_bar.after(1000, self.update_progress)
+        self.update_progress_bar = self.progress_bar.after(50, self.update_progress)
 
     def create_after_download_popup(self, state):
         if state == 1:
@@ -182,40 +184,44 @@ class Player:
             tkinter.messagebox.showinfo("Error",  "Unsuccessfully downloaded the song") 
 
     def download_from_youtube(self):
-        if self.progress_window.winfo_exists() == False or self.progress_window.wm_state() != 'normal' : # if this window is open, the state will be 'normal'. If it is closed then the state will be 'withdrawn'
-            self.progress_window.wm_deiconify()
-        self.progress_bar.start(110)
-        self.update_progress()
+        try:
+            self.progress_bar.start(50)
+            url = self.download_text_var.get()
+            if(url.strip() != ""):
+                youtube = YouTube(f'{url}')
+                song = youtube.streams.filter(file_extension='mp4').first()
+                out_file = song.download(output_path="./songs")
 
-        # try:
-        #     self.progress_bar.start(111)
-        #     self.update_progress()
-        #     url = self.download_text_var.get()
-        #     if(url.strip() != ""):
-        #         youtube = YouTube(f'{url}')
-        #         song = youtube.streams.filter(mime_type="video/mp4").first()
-        #         out_file = song.download(output_path="./songs")
+                # Covert mp4 to mp3 and then delete the mp4
+                video = VideoFileClip(f"./songs/{song.title}.mp4")
+                video.audio.write_audiofile(f"./songs/{song.title}.mp3")
+                video.close()
+                remove(f"./songs/{song.title}.mp4")
 
-        #         # Covert mp4 to mp3 and then delete the mp4
-        #         video = VideoFileClip(f"./songs/{song.title}.mp4")
-        #         video.audio.write_audiofile(f"./songs/{song.title}.mp3")
-        #         video.close()
-        #         remove(f"./songs/{song.title}.mp4")
+                # Update song list
+                self.songs = listdir("./songs")
 
-        #         # Update song list
-        #         self.songs = listdir("./songs")
-
-        #         # Reset download box
-        #         self.download_text_var.set("")
-        #     else:
-        #         self.error_banner.config(text="URL can not be empty")
-        # except:
-        #     # Make error message disappear after a certain amount of time
-        #     self.error_banner.config(text="URL not found", fg="red")
-        #     self.root.after(1200, lambda: self.error_banner.config(text=""))
-        #     self.root.after(1200, lambda: self.download_text_var.set(""))
+                # Reset download box
+                self.download_text_var.set("")
+                
+                self.progress_window.withdraw()
+            else:
+                self.error_banner.config(text="URL can not be empty")
+        except Exception as e:
+            print(repr(e))
+            # Make error message disappear after a certain amount of time
+            self.error_banner.config(text="URL not found", fg="red")
+            self.root.after(1200, lambda: self.error_banner.config(text=""))
+            self.root.after(1200, lambda: self.download_text_var.set(""))
     
 
+    def start_download_from_youtube_in_bg(self):
+        if self.progress_window.wm_state() != 'normal' : # if this window is open, the state will be 'normal'. If it is closed then the state will be 'withdrawn'
+            self.progress_window.wm_deiconify()
+            self.update_progress()
+            self.progress_bar.start(50)
+        thread1 = threading.Thread(target=self.download_from_youtube)
+        thread1.start()
 
     def loop(self):
         self.root.mainloop()
