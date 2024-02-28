@@ -1,6 +1,5 @@
 from tkinter import *
 import tkinter.messagebox
-from time import sleep
 from pygame import mixer
 from PIL import ImageTk, Image
 from os import listdir, path, remove
@@ -9,7 +8,6 @@ from mutagen.mp3 import MP3 # module to get MP3 file information like video dura
 from pytube import YouTube # module to download video from Youtube
 from moviepy.editor import VideoFileClip # module to convert mp4 to mp3
 import threading
-import multiprocessing
 
 
 class Player:
