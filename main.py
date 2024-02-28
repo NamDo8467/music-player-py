@@ -16,6 +16,7 @@ class Player:
         self.root = root
         self.root.geometry("500x500")
         self.root.title('Music Player')
+        self.root.wm_resizable(False, False)
         self.is_paused = True
         self.songs = listdir('./songs')
         self.index_of_song = 0
@@ -57,18 +58,23 @@ class Player:
 
         self.song_length = 0
 
+        # Create progress popup window
         self.progress_window = Toplevel()
         self.progress_window.title("Download Status")
-        self.progress_window.geometry("300x200")
+        self.progress_window.geometry("400x200")
         self.progress_window.withdraw()
-        # self.progress_window.wm_resizable(False, False)
+        self.progress_window.protocol("WM_DELETE_WINDOW", self.close_progress_window)
 
+        self.update_progress_bar = ''
 
-        # self.progress_window, variable=self.progress_var, maximum=100
         self.progress_var = DoubleVar()
-        self.progress_bar = ttk.Progressbar(self.progress_window, variable=self.progress_var, maximum=100)
-        self.progress_bar.pack(padx=20, pady=50, fill="x")
+        self.progress_bar = ttk.Progressbar(self.progress_window, variable=self.progress_var, maximum=100, mode='determinate')
 
+        self.download_text_progress_var = DoubleVar(0)
+        self.progress_label = ttk.Label(self.progress_window, text=f'Downloading: {self.download_text_progress_var.get()}' )
+        
+        self.progress_label.grid(row=0, column=2, columnspan=4, padx=150, pady=(50,0))
+        self.progress_bar.grid(row = 1, column = 2, columnspan=6, padx=155, pady=(25,0))
 
     def play(self, start=0):
         if(self.is_paused != False):
@@ -126,7 +132,7 @@ class Player:
         self.slider.config(to=self.song_length, length=self.song_length, value=0)
         mixer.music.load(path.join('songs', self.songs[self.index_of_song]))
        
-    def slide(self, none):
+    def slide(self):
         mixer.music.play(start=int(self.slider.get()))
         
 
@@ -146,33 +152,44 @@ class Player:
                 print(self.slider.get())
                 mixer.music.stop()
 
-    def update_progress(self):
-        new_value = self.progress_var.get()
-        new_value += 10
-        if new_value > 100:
-            new_value = 0 
-            self.progress_window.withdraw()
+    def close_progress_window(self):
+        self.progress_bar.stop()
+        self.progress_bar.after_cancel(self.update_progress_bar)
+        self.progress_var.set(0)
+        self.progress_label.configure(text=f'Downloading: {self.progress_var.get()}')
+        self.progress_window.wm_withdraw()
+
+
+    def update_progress(self, exit=0):
+        if(exit == 1):
             return
-        self.progress_var.set(new_value)
-        self.progress_bar.configure(value=new_value)
-        self.progress_window.after(1000, self.update_progress)        
+        self.download_text_progress_var.set(self.progress_var.get())
+        self.progress_label.configure(text=f'Downloading: {self.download_text_progress_var.get()}')
+        self.progress_bar.configure(value=1)
+        print("I run")
+        if self.progress_var.get() >= 90:
+            self.progress_var.set(99.9)
+            self.progress_label.configure(text=f'Downloading: {self.progress_var.get()}')
+            self.progress_window.wm_withdraw() # close the progress window
+            # self.create_after_download_popup(1)
+            return
+        self.update_progress_bar = self.progress_bar.after(1000, self.update_progress)
+
+    def create_after_download_popup(self, state):
+        if state == 1:
+            tkinter.messagebox.showinfo("Download finish",  "The song has been downloaded successfully") 
+        else:
+            tkinter.messagebox.showinfo("Error",  "Unsuccessfully downloaded the song") 
 
     def download_from_youtube(self):
-        self.progress_window.deiconify()
-
+        if self.progress_window.winfo_exists() == False or self.progress_window.wm_state() != 'normal' : # if this window is open, the state will be 'normal'. If it is closed then the state will be 'withdrawn'
+            self.progress_window.wm_deiconify()
+        self.progress_bar.start(110)
         self.update_progress()
-        # while(new_value < 100):
-        #     new_value = self.progress_var.get()
-        #     new_value += 10
-        #     if new_value > 100:
-        #         new_value = 0
-        #     self.progress_var.set(new_value)
-        #     self.progress_bar["value"] = new_value
-        #     sleep(1)
-        
-        # progress_window.after(1000, self.update_progress(progress_var, new_value, progress_bar))
-        
+
         # try:
+        #     self.progress_bar.start(111)
+        #     self.update_progress()
         #     url = self.download_text_var.get()
         #     if(url.strip() != ""):
         #         youtube = YouTube(f'{url}')
