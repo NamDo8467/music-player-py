@@ -134,7 +134,7 @@ class Player:
         self.slider.config(to=self.song_length, length=self.song_length, value=0)
         mixer.music.load(path.join('songs', self.songs[self.index_of_song]))
        
-    def slide(self):
+    def slide(self,none):
         mixer.music.play(start=int(self.slider.get()))
         
 
